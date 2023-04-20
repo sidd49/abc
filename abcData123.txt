@@ -1,0 +1,340 @@
+Naive bayes
+
+import pandas as pd
+
+df = pd.read_csv("C:/Users/admin/Downloads/titanic.csv")
+df.head()
+
+df.drop(['PassengerId','Name','SibSp','Parch','Ticket','Cabin','Embarked'],axis='columns',inplace=True)
+df.head()
+
+df.isnull().sum()
+
+inputs = df.drop('Survived',axis='columns')
+target = df.Survived
+
+dummies = pd.get_dummies(inputs.Sex)
+dummies.head(3)
+
+inputs = pd.concat([inputs,dummies],axis='columns')
+inputs.head(3)
+
+inputs.drop(['Sex','male'],axis='columns',inplace=True)
+inputs.head(3)
+
+inputs.columns[inputs.isna().any()]
+
+inputs.Age[:10]
+
+inputs.Age = inputs.Age.fillna(inputs.Age.mean())
+inputs.head()
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(inputs,target,test_size=0.3)
+
+from sklearn.naive_bayes import GaussianNB
+model = GaussianNB()
+
+model.fit(X_train,y_train)
+
+model.score(X_test,y_test)
+
+X_test[0:10]
+
+y_test[0:10]
+
+model.predict(X_test[0:10])
+
+model.predict_proba(X_test[:10])
+
+from sklearn.model_selection import cross_val_score
+cross_val_score(GaussianNB(),X_train, y_train, cv=5)
+
+***********************************************************************************************************************************
+
+KMeans
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+
+# loading the data from csv file to a Pandas DataFrame
+customer_data = pd.read_csv('/content/Mall_Customers.csv')
+
+# first 5 rows in the dataframe
+customer_data.head()
+
+customer_data.shape
+
+# getting some informations about the dataset
+customer_data.info()
+
+# checking for missing values
+customer_data.isnull().sum()
+
+X = customer_data.iloc[:,[3,4]].values
+print(X)
+
+# finding wcss value for different number of clusters
+wcss = []
+for i in range(1,11):
+  kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
+  kmeans.fit(X)
+
+  wcss.append(kmeans.inertia_)
+
+sns.set()
+plt.plot(range(1,11), wcss)
+plt.title('The Elbow Point Graph')
+plt.xlabel('Number of Clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+kmeans = KMeans(n_clusters=5, init='k-means++', random_state=0)
+
+# return a label for each data point based on their cluster
+Y = kmeans.fit_predict(X)
+
+print(Y)
+
+plt.figure(figsize=(8,8))
+plt.scatter(X[Y==0,0], X[Y==0,1], s=50, c='green', label='Cluster 1')
+plt.scatter(X[Y==1,0], X[Y==1,1], s=50, c='red', label='Cluster 2')
+plt.scatter(X[Y==2,0], X[Y==2,1], s=50, c='yellow', label='Cluster 3')
+plt.scatter(X[Y==3,0], X[Y==3,1], s=50, c='violet', label='Cluster 4')
+plt.scatter(X[Y==4,0], X[Y==4,1], s=50, c='blue', label='Cluster 5')
+
+# plot the centroids
+plt.scatter(kmeans.cluster_centers_[:,0], kmeans.cluster_centers_[:,1], s=100, c='cyan', label='Centroids')
+
+plt.title('Customer Groups')
+plt.xlabel('Annual Income')
+plt.ylabel('Spending Score')
+plt.show()
+
+******************************************************************************************************************************************
+Neural Networks
+
+pip install tensorflow
+pip install keras
+
+#importing necessary libraries
+import tensorflow as tf
+from tensorflow import keras
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+# MNIST stands for “Modified National Institute of Standards and Technology”. 
+# It is a dataset of 70,000 handwritten images. Each image is of 28x28 pixels 
+# i.e. about 784 features. Each feature represents only one pixel’s intensity i.e. from 0(white) to 255(black). 
+# This database is further divided into 60,000 training and 10,000 testing images.
+
+#import dataset and split into train and test data
+mnist = tf.keras.datasets.mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+len(x_train)
+
+len(x_test)
+
+#shape of training dataset  60,000 images having 28*28 size
+x_train.shape
+
+
+#shape of testing dataset  10,000 images having 28*28 size
+x_test.shape
+x_train[0]
+
+#to see how first image look
+plt.matshow(x_train[0])
+
+x_train = x_train / 255
+x_test = x_test / 255
+
+x_train[0]
+
+x_train_flattened = x_train.reshape(len(x_train), 28*28)
+x_test_flattened = x_test.reshape(len(x_test), 28*28)
+
+x_train_flattened.shape
+
+x_train_flattened[0]
+
+
+# 1. Sequential Architecture implies that the layers will be stacked on top of each other with the output of the previous layer feeding into the next.
+# 
+# The ReLU function is one of the most popular activation functions. 
+# It stands for “rectified linear unit”. Mathematically this function is defined as:
+# y = max(0,x)The ReLU function returns “0” if the input is negative and is linear if 
+# the input is positive.
+# 
+# The softmax function is another activation function. 
+# It changes input values into values that reach from 0 to 1.
+
+
+model = keras.Sequential([
+    keras.layers.Dense(10, input_shape=(784,), activation='sigmoid')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(x_train_flattened, y_train, epochs=5)
+model.summary()
+model.evaluate(x_test_flattened, y_test)
+
+y_predicted = model.predict(x_test_flattened)
+y_predicted[0]
+
+plt.matshow(x_test[0])
+np.argmax(y_predicted[0])
+
+y_predicted_labels = [np.argmax(i) for i in y_predicted]  #because ytest-integer and y_predicted is whole number that why we are doing
+
+y_predicted_labels[:5]
+
+cm = tf.math.confusion_matrix(labels=y_test,predictions=y_predicted_labels)
+cm
+
+import seaborn as sn
+plt.figure(figsize = (10,7))
+sn.heatmap(cm, annot=True, fmt='d')
+plt.xlabel('Predicted')
+plt.ylabel('Truth')
+
+model = keras.Sequential([
+    keras.layers.Dense(100, input_shape=(784,), activation='relu'),
+    keras.layers.Dense(10, activation='sigmoid')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(x_train_flattened, y_train, epochs=5)
+
+model.evaluate(x_test_flattened,y_test)
+
+y_predicted = model.predict(x_test_flattened)
+y_predicted_labels = [np.argmax(i) for i in y_predicted]
+cm = tf.math.confusion_matrix(labels=y_test,predictions=y_predicted_labels)
+
+plt.figure(figsize = (10,7))
+sn.heatmap(cm, annot=True, fmt='d')
+plt.xlabel('Predicted')
+plt.ylabel('Truth')
+
+model = keras.Sequential([
+    keras.layers.Flatten(input_shape=(28, 28)),
+    keras.layers.Dense(100, activation='relu'),
+    keras.layers.Dense(10, activation='sigmoid')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(x_train, y_train, epochs=10)
+
+model.evaluate(x_test,y_test)
+
+**************************************************************************************************************************************
+Linear Regression
+
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('/content/Bengaluru_House_Data.csv')
+
+df.head()
+
+df['total_sqft'] = pd.to_numeric(df['total_sqft'], errors='coerce')
+
+# drop rows with NaN values
+df.dropna(subset=['total_sqft'], inplace=True)
+
+# check the datatype of the column again to confirm it is now numeric
+print(df['total_sqft'].dtype)
+
+df.info()
+
+X = df['total_sqft']
+X = np.array(X)
+X = X.reshape(-1, 1)
+y = df['price']
+y = np.array(y)
+y = y.reshape(-1, 1)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4,
+                                                    random_state=1)
+
+reg = LinearRegression()
+# train the model using the training sets
+reg = reg.fit(X_train, y_train)
+
+reg.score(X_test, y_test)
+
+pred = reg.predict(X_test)
+
+print(mean_squared_error(pred, y_test, squared=False))
+
+sns.scatterplot(df, x='total_sqft', y='price', color='pink')
+plt.plot(X_test, pred)
+# sns.regplot(x=X_test, y=pred, color="#9a9a9a", scatter=False, truncate=True)
+
+
+*****************************************************************************************************************
+DT
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn import tree
+df = pd.read_csv('../../datasets/Social_Network_Ads.csv')
+
+X = df[['Age','EstimatedSalary']]
+y = df['Purchased']
+
+from sklearn.model_selection import train_test_split
+X_train, X_test,y_train, y_test = train_test_split(X,y,test_size=0.25,random_state=18)
+from sklearn.tree import DecisionTreeClassifier
+
+model = DecisionTreeClassifier(criterion = 'entropy',random_state=100, max_depth=2)
+tree.plot_tree(model.fit(X_train.values,y_train.values))
+model.score(X_test.values,y_test.values)
+
+model.score(X_train.values,y_train.values)
+
+depths = [1,2,3]
+leaf_samples = [1,2,3,4]
+for depth in depths:
+    for samples in leaf_samples:
+        model = DecisionTreeClassifier(random_state=100, max_depth=depth, min_samples_leaf=samples)
+        model.fit(X_train,y_train)
+        print('DEPTH:', depth, 'MIN SAMPLES LEAF:',samples, 'SCORE:',model.score(X_test,y_test))
+
+Hyperparameter Tuning
+
+from sklearn.model_selection import GridSearchCV
+
+params = {'max_depth':[1,2,3,4,5],'min_samples_leaf':[1,2,3,4],'min_samples_split':[3,4,5,6]}
+grid_cv = GridSearchCV(DecisionTreeClassifier(random_state=100),param_grid=params,cv=4, verbose=2)
+grid_cv.fit(X,y)
+
+grid_cv.best_score_
+
+grid_cv.best_estimator_
+
+grid_cv.best_params_
+
+final_model = DecisionTreeClassifier(criterion = 'entropy',max_depth=2, min_samples_leaf=1,min_samples_split=3,random_state=100)
+tree.plot_tree(final_model.fit(X,y))
